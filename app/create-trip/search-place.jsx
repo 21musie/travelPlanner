@@ -1,240 +1,165 @@
-/* eslint-disable @next/next/no-img-element */
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-} from 'react-native';
-import React, { useContext, useEffect, useState, useRef } from 'react';
-import { useNavigation, useRouter } from 'expo-router';
+
+// import { StyleSheet,View,Image,Text} from 'react-native';
+// import { useNavigation,useRouter } from 'expo-router';
+// import { useEffect, useContext } from 'react';
+// import { Colors } from '@/constants/Colors';
+// import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+// // import { EXPO_PUBLIC_GOOGLE_MAP_API_KEY } from '@env';
+// import { CreateTripContext } from '../../context/CreateTripContext';
+
+// const SearchPlace = () => {
+//   const navigation = useNavigation();
+//   const router = useRouter();
+
+//   const { tripData, setTripData } = useContext(CreateTripContext);
+
+//   useEffect(() => {
+//     navigation.setOptions({
+//       headerShown: true,
+//       headerTransparent: true,
+//       headerTitle: 'Search',
+//     });
+//   }, [navigation]);
+
+//   useEffect(() => {
+//     console.log("tripData",tripData)
+//   }, [tripData]);
+
+
+//   return (
+//     <View style={styles.container}>
+
+//       <Text style={styles.title}>Search Your Destination</Text>
+
+//         <GooglePlacesAutocomplete
+//           placeholder='Search Place'
+//           fetchDetails={true}
+//           onPress={(data, details = null) => {
+//             console.log(data, details);
+//             setTripData({
+//               ...tripData,
+//               locationInfo: {
+//                 name: data.description,
+//                 coordinate: details?.geometry.location,
+//                 photoRef: details?.photos[0].photo_reference,
+//                 url:details?.url
+//               },
+//             });
+//             router.push('create-trip/Select-Traveler')
+//           }}
+//           query={{
+//             key: process.env.EXPO_PUBLIC_GOOGLE_MAP_API_KEY,
+//             language: 'en',
+//           }}
+//           styles={{
+//             textInputContainer: {
+//               backgroundColor: Colors.white,
+//               borderWidth:1,
+//               borderRadius:15,
+//               marginTop:25,
+              
+//             },
+            
+//           }}
+//         />     
+//     </View>
+//   );
+// }
+
+// export default SearchPlace;
+
+// const styles = StyleSheet.create({
+//   container: {
+//     backgroundColor: Colors.white,
+//     paddingTop: 85,
+//     padding: 25,
+//     height: '100%',
+//   },
+  
+//   title: {
+//     fontFamily: 'Outfit-Bold',
+//     fontSize: 30,
+//     textAlign:'center',
+//     marginTop:10
+//   },
+// });
+
+import { View, Text } from 'react-native';
+import React, { useEffect } from 'react';
+import { useContext } from 'react';
+import { useNavigation } from 'expo-router';
 import { Colors } from '@/constants/Colors';
-import { CreateTripContext } from '@/context/CreateTripContext';
-import { Ionicons } from '@expo/vector-icons';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+// import { EXPO_PUBLIC_GOOGLE_MAP_API_KEY } from '@env';
+import { CreateTripContext } from '../../context/CreateTripContext';
 
 export default function SearchPlace() {
-  const [locationName, setLocationName] = useState('');
-  const [predictions, setPredictions] = useState([]);
-  const [selectedPlaceId, setSelectedPlaceId] = useState(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const typingTimeout = useRef(null);
-  const navigation = useNavigation();
+  const navigation=useNavigation();
   const { tripData, setTripData } = useContext(CreateTripContext);
-  const router = useRouter();
-
-  useEffect(() => {
-    navigation.setOptions({
-      headerShown: true,
-      headerTransparent: true,
-      headerTitle: 'Search',
-    });
-  }, []);
+  useEffect(()=>{
+navigation.setOptions({
+  headerShown:true,
+  headerTransparent:true,
+  headerTitle:"Search"
+})
+  },[])
 
   useEffect(() => {
     console.log(tripData);
   }, [tripData]);
 
-  const handleSetLocation = () => {
-    if (locationName.trim()) {
-      setTripData({
-        locationInfo: {
-          name: locationName,
-          coordinates: {
-            lat: 21.0285,
-            lng: 105.8542,
-          },
-          photoRef:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Thap_Rua.jpg/396px-Thap_Rua.jpg',
-        },
-      });
-      router.push('/create-trip/select-traveler');
-    }
-  };
-
-  const fetchPredictions = async (input) => {
-    try {
-      const response = await fetch(
-        `https://rsapi.goong.io/Place/AutoComplete?api_key=${process.env.EXPO_PUBLIC_REACT_APP_GOONG_API_KEY}&input=${input}`
-      );
-      const data = await response.json();
-
-      if (data.status === 'OK') {
-        const formattedPredictions = data.predictions.map((prediction) => ({
-          place_id: prediction.place_id,
-          main_text: prediction.structured_formatting.main_text,
-          secondary_text: prediction.structured_formatting.secondary_text,
-        }));
-        setPredictions(formattedPredictions);
-        setIsOpen(true);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleLocationChange = (input) => {
-    setLocationName(input);
-
-    if (typingTimeout.current) {
-      clearTimeout(typingTimeout.current);
-    }
-
-    if (input.trim()) {
-      typingTimeout.current = setTimeout(() => {
-        fetchPredictions(input);
-      }, 1000);
-    } else {
-      setPredictions([]);
-      setIsOpen(false);
-    }
-  };
-
-  const handleSelectPlace = (placeId) => {
-    const selectedPrediction = predictions.find(
-      (p) => p.place_id === placeId
-    );
-    setSelectedPlaceId(placeId);
-    if (selectedPrediction) {
-      setLocationName(
-        `${selectedPrediction.main_text}, ${selectedPrediction.secondary_text}`
-      );
-    }
-    setPredictions([]);
-    setIsOpen(false);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.nativeEvent.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex((prev) =>
-        prev < predictions.length - 1 ? prev + 1 : prev
-      );
-    } else if (e.nativeEvent.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
-    } else if (e.nativeEvent.key === 'Enter' && selectedIndex >= 0) {
-      handleSelectPlace(predictions[selectedIndex].place_id);
-    } else if (e.nativeEvent.key === 'Escape') {
-      setIsOpen(false);
-    }
-  };
 
   return (
     <View
-      style={{
-        marginTop: 75,
-        flexDirection: 'column',
-        alignItems: 'center',
-        margin: 20,
-      }}
+    style={{
+      padding:25,
+      paddingTop:75,
+      backgroundColor: Colors.WHITE,
+      height:'100%'
+    }}
     >
-      <View style={{ flexDirection: 'row' }}>
-        <View style={{ position: 'relative', flex: 1 }}>
-          <TextInput
-            placeholder="Search for places..."
-            value={locationName}
-            onChangeText={handleLocationChange}
-            onFocus={() => setIsOpen(true)}
-            onKeyPress={handleKeyDown}
-            style={{
-              borderWidth: 1,
-              borderColor: '#ccc',
-              borderRadius: 5,
-              padding: 10,
-              marginRight: 5,
-              fontSize: 16,
-            }}
-          />
-        </View>
-        <TouchableOpacity
-          onPress={handleSetLocation}
-          style={{
-            backgroundColor: Colors.PRIMARY,
-            borderRadius: 5,
-            padding: 10,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Ionicons name="search" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
 
-      {isOpen && predictions.length > 0 && (
-        <View
-          style={{
-            backgroundColor: 'white',
-            borderRadius: 10,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
-            marginTop: 10,
-            overflow: 'hidden',
-            width: '100%',
-          }}
-        >
-          <FlatList
-            data={predictions}
-            keyExtractor={(item) => item.place_id}
-            renderItem={({ item, index }) => (
-              <TouchableOpacity
-                onPress={() => handleSelectPlace(item.place_id)}
-                style={{
-                  padding: 15,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#ccc',
-                  backgroundColor:
-                    selectedPlaceId === item.place_id
-                      ? Colors.PRIMARY
-                      : selectedIndex === index
-                      ? '#e0f7fa'
-                      : 'white',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}
-              >
-                <Ionicons
-                  name="navigate-circle-outline"
-                  size={30}
-                  color="gray"
-                  style={{
-                    marginRight: 10,
-                  }}
-                />
+<GooglePlacesAutocomplete
 
-                <View style={{ flexDirection: 'column', gap: 2 }}>
-                  <Text
-                    style={{
-                      color:
-                        selectedPlaceId === item.place_id ? 'white' : 'black',
-                      fontWeight: 'normal',
-                      fontSize: 16,
-                    }}
-                  >
-                    {item.main_text}
-                  </Text>
-                  <Text
-                    style={{
-                      color: 'gray',
-                      fontWeight: 'light',
-                      fontSize: 14,
-                    }}
-                  >
-                    {item.secondary_text}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            style={{ maxHeight: 400 }}
-          />
-        </View>
-      )}
-    </View>
-  );
+      placeholder='Search places'
+      fetchDetails={true}
+      onFail={error=>console.log(error)} 
+      onPress={(data, details = null) => {
+        // 'details' is provided when fetchDetails = true
+        
+        console.log(data.description);
+        console.log(details?.geometry.location);
+        console.log(details?.photo[0]?.photo_reference);
+        console.log(details?.url);
+        setTripData({
+        locationInfo: {
+          name: data.description,
+          coordinates:details?.geometry.location,
+          photoRef:details?.photo[0]?.photo_reference,
+          url:details?.url,
+
+        },
+      });
+      }}
+      query={{
+        key: "AIzaSyAUZF6gwDehwTmUpkqsNimUk3cA2wDR1GY",
+        language: 'en',
+      }}
+      requestUrl={{
+          useOnPlatform: 'web',
+          url: 'https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api', // CORS proxy for web
+        }}
+
+      styles={{
+        textInputContainer:{
+          borderWidth:1,
+          borderRadius:5,
+          marginTop:25,
+        }
+      }}
+    />
+      <Text>search-place</Text>
+      
+    </View> 
+  )
 }
