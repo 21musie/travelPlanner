@@ -84,7 +84,7 @@
 //   },
 // });
 
-import { View, Text } from 'react-native';
+import { View, Text,Button  } from 'react-native';
 import React, { useEffect } from 'react';
 import { useContext } from 'react';
 import { useNavigation } from 'expo-router';
@@ -107,6 +107,28 @@ navigation.setOptions({
   useEffect(() => {
     console.log(tripData);
   }, [tripData]);
+
+  const defaultPlace = {
+    name: "Eiffel Tower, Paris, France",
+    coordinates: {
+      lat: "48.8588443",
+      lng: "2.2943506",
+    },
+    photoRef: "ATJ83zhSSAtkh5LTozXMhBghqubeOxnZWUV2m7Hv2tQaIzKQJgvZk9yCaEjBW0r0Zx1oJ9RF1G7oeM34sQQMOv8s2zA0sgGBiyBgvdyMxeVByRgHUXmv-rkJ2wyvNv17jyTSySm_-_6R2B0v4eKX257HOxvXlx_TSwp2NrICKrZM2d5d2P4q",
+    url: "https://www.google.com/maps/place/Eiffel+Tower",
+  };
+
+  const handleNextPage = () => {
+    // Use the selected place or the default place
+    const placeToUse = defaultPlace;
+
+    setTripData({
+      locationInfo: placeToUse,
+    });
+
+    // Navigate to the Select-Traveler page
+    navigation.navigate('create-trip/Select-Traveler');
+  };
 
 
   return (
@@ -133,22 +155,26 @@ navigation.setOptions({
         console.log(details?.url);
         setTripData({
         locationInfo: {
-          name: data.description,
-          coordinates:details?.geometry.location,
-          photoRef:details?.photo[0]?.photo_reference,
-          url:details?.url,
+          // name: data.description,
+          // coordinates:details?.geometry.location,
+          // photoRef:details?.photo[0]?.photo_reference,
+          // url:details?.url,
 
+name: "Eiffel Tower, Paris, France",
+          coordinates:{
+      lat: "48.8588443",
+      lng: "2.2943506",
+    },
+          photoRef:"ATJ83zhSSAtkh5LTozXMhBghqubeOxnZWUV2m7Hv2tQaIzKQJgvZk9yCaEjBW0r0Zx1oJ9RF1G7oeM34sQQMOv8s2zA0sgGBiyBgvdyMxeVByRgHUXmv-rkJ2wyvNv17jyTSySm_-_6R2B0v4eKX257HOxvXlx_TSwp2NrICKrZM2d5d2P4q",
+          url:"https://www.google.com/maps/place/Eiffel+Tower",
         },
       });
+      router.push('create-trip/Select-Traveler')
       }}
       query={{
         key: "AIzaSyAUZF6gwDehwTmUpkqsNimUk3cA2wDR1GY",
         language: 'en',
       }}
-      requestUrl={{
-          useOnPlatform: 'web',
-          url: 'https://cors-anywhere.herokuapp.com/https://maps.googleapis.com/maps/api', // CORS proxy for web
-        }}
 
       styles={{
         textInputContainer:{
@@ -158,6 +184,13 @@ navigation.setOptions({
         }
       }}
     />
+
+<Button
+        title="Continue to Select Travelers"
+        onPress={handleNextPage}
+        color={Colors.primary} // Use your primary color or any color you prefer
+        style={{ marginTop: 20 }}
+      />
       <Text>search-place</Text>
       
     </View> 
