@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Image, Touchable
 import React, { useState, useEffect } from 'react';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { collection, doc, getDoc } from 'firebase/firestore';
-import { auth, db } from './../../configs/firebaseConfig';
+import { auth, db } from '../../configs/firebaseConfig';
 import { Colors } from '@/constants/Colors';
 
 // Define TypeScript interface for Trip Data
