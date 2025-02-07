@@ -1,158 +1,162 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
-  Alert,
+import React, { useState } from 'react';
+import { 
+    View, Text, TextInput, TouchableOpacity, 
+    StyleSheet, Alert, Image, KeyboardAvoidingView, 
+    ScrollView, Platform, Keyboard, TouchableWithoutFeedback 
 } from 'react-native';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { router } from 'expo-router';
+import { auth } from '@/configs/FirebaseConfig';
+import { reauthenticateWithCredential, updatePassword, EmailAuthProvider } from 'firebase/auth';
 
-export default function Profile() {
-  const [user, setUser] = useState<any>(null); // State for the current user
-  const [randomAvatarUrl, setRandomAvatarUrl] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+export default function ProfileUpdate() {
+    const user = auth.currentUser;
+    
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newEmail, setNewEmail] = useState(user?.email || '');
+    const [newPassword, setNewPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const auth = getAuth();
-    // Listen for authentication state changes (user sign-in/sign-out)
-    const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-      if (authUser) {
-        setUser(authUser); // Set the user info from Firebase
-        // Set the random avatar URL
-        setRandomAvatarUrl(
-          `https://avatar.iran.liara.run/public/${Math.floor(Math.random() * 100) + 1}`
-        );
-      } else {
-        setUser(null); // No user signed in
-      }
-      setIsLoading(false); // Set loading to false once the user info is fetched
-    });
+    // Function to reauthenticate the user
+    const reauthenticateUser = async () => {
+        if (!user || !currentPassword) {
+            Alert.alert('Error', 'Please enter your current password to proceed.');
+            return false;
+        }
 
-    return () => {
-      unsubscribe(); // Clean up the listener on unmount
+        const credential = EmailAuthProvider.credential(user.email || '', currentPassword);
+        try {
+            await reauthenticateWithCredential(user, credential);
+            return true;
+        } catch (error) {
+            Alert.alert('Authentication Failed', 'Incorrect password. Please try again.');
+            return false;
+        }
     };
-  }, []);
 
-  if (isLoading) {
+    // Function to update email and/or password
+    const handleUpdate = async () => {
+        setLoading(true);
+        try {
+            const isReauthenticated = await reauthenticateUser();
+            if (!isReauthenticated) return;
+
+            if (newPassword.length > 0) {
+                await updatePassword(user, newPassword);
+                Alert.alert('Success', 'Password updated successfully!');
+            }
+
+            Alert.alert('Profile Updated', 'Your profile has been updated.');
+        } catch (error) {
+            Alert.alert('Update Failed', error.message || 'An error occurred.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#7fbbf0" />
-      </View>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.container}
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <ScrollView 
+                    contentContainerStyle={styles.scrollContainer} 
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <View style={styles.innerContainer}>
+                        <Image
+                            source={require('../../assets/images/profileSettings.png')}
+                            style={styles.profileImage}
+                        />
+                        <Text style={styles.title}>Update Profile</Text>
+
+                        <Text style={styles.label}>Email</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter new email"
+                            value={newEmail}
+                            onChangeText={setNewEmail}
+                            editable={false}
+                            keyboardType="email-address"
+                        />
+
+                        <Text style={styles.label}>New Password</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter new password"
+                            secureTextEntry
+                            value={newPassword}
+                            onChangeText={setNewPassword}
+                        />
+
+                        <Text style={styles.label}>Current Password (Required)</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter current password"
+                            secureTextEntry
+                            value={currentPassword}
+                            onChangeText={setCurrentPassword}
+                        />
+
+                        <TouchableOpacity style={styles.button} onPress={handleUpdate} disabled={loading}>
+                            <Text style={styles.buttonText}>{loading ? 'Updating...' : 'Update Profile'}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
     );
-  }
-
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Please log in to view your profile.</Text>
-      </View>
-    );
-  }
-
-  const handleSignOut = () => {
-    const auth = getAuth();
-    signOut(auth)
-      .then(() => {
-        console.log('User signed out');
-        router.push('/auth/sign-in');
-      })
-      .catch((error) => {
-        console.error('Error signing out: ', error);
-      });
-  };
-
-  const confirmSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        { text: 'OK', onPress: handleSignOut },
-      ],
-      { cancelable: false }
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      {/* User Avatar */}
-      <View style={styles.avatarContainer}>
-        {randomAvatarUrl ? (
-          <Image source={{ uri: randomAvatarUrl }} style={styles.avatar} />
-        ) : (
-          <ActivityIndicator
-            size="small"
-            color="#7fbbf0"
-            style={styles.avatar}
-          />
-        )}
-      </View>
-
-      {/* User Info */}
-      <Text style={styles.username}>{user.displayName || 'Anonymous'}</Text>
-      <Text style={styles.email}>{user.email}</Text>
-
-      {/* Additional User Info (optional) */}
-      <Text style={styles.text}>Welcome to your profile!</Text>
-
-      {/* Sign Out Button */}
-      <TouchableOpacity style={styles.signOutButton} onPress={confirmSignOut}>
-        <Text style={styles.signOutText}>Sign Out</Text>
-      </TouchableOpacity>
-    </View>
-  );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  username: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  email: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 16,
-  },
-  text: {
-    fontSize: 16,
-    color: '#666',
-  },
-  signOutButton: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: '#FF4C4C',
-    borderRadius: 5,
-  },
-  signOutText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    scrollContainer: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        paddingBottom: 150, // Ensures space for the button
+    },
+    innerContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        padding: 20,
+    },
+    profileImage: {
+        width: 150,
+        height: 150,
+        alignSelf: 'center',
+        marginBottom: 20,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: '500',
+        marginBottom: 5,
+    },
+    input: {
+        width: '100%',
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        marginBottom: 15,
+    },
+    button: {
+        backgroundColor: '#007bff',
+        padding: 15,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });
