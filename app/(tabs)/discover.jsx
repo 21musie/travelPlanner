@@ -27,8 +27,8 @@ export default function Discover() {
 }
 
 const TravelGuideScreen = () => {
-  const [locations, setLocations] = useState([]); // Removed TypeScript type annotation
-  const [selectedCategory, setSelectedCategory] = useState(null); // Removed TypeScript type annotation
+  const [locations, setLocations] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const fetchLocations = async () => {
