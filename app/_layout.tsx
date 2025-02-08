@@ -1,43 +1,35 @@
-import {useFonts } from "expo-font"
+import { CreateTripContext } from "@/context/CreateTripContext";
+import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
-import { useEffect, useState } from 'react';
-import * as SplashScreen from 'expo-splash-screen';
-import { CreateTripContext } from '@/context/CreateTripContext';
+import { useState } from "react";
+import { ActivityIndicator, View } from "react-native";
+import { LogBox } from 'react-native';
+
 
 export default function RootLayout() {
-
-  const [tripData, setTripData] = useState([]);
-
-  const [loaded, error] = useFonts({
-    'roboto-regular': require('./../assets/fonts/Roboto-Regular.ttf'),
-    'roboto-medium': require('./../assets/fonts/Roboto-Medium.ttf'),
-    'roboto-bold': require('./../assets/fonts/Roboto-Bold.ttf'),
-    'roboto-italic': require('./../assets/fonts/Roboto-Italic.ttf'),
+  const [fontsLoaded] = useFonts({
+    "outfit": require("../assets/fonts/Outfit-Regular.ttf"),
+    "outfit-medium": require("../assets/fonts/Outfit-Medium.ttf"),
+    "outfit-bold": require("../assets/fonts/Outfit-Bold.ttf"),
   });
+  LogBox.ignoreAllLogs(); 
 
-  useEffect(() => {
-    if (loaded || error) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded, error]);
-  if (!loaded && !error) {
-    return null;
+  const [tripData, setTripData] = useState<any>({});
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
   }
-
   return (
-      <CreateTripContext.Provider value={{ tripData, setTripData }}>
-        <Stack screenOptions={{ headerShown: false }}>
-          {/* <Stack.Screen name="index" options={{ headerShown: false }} /> */}
-          <Stack.Screen
-            name="auth/sign-in/index"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="auth/sign-up/index"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-      </CreateTripContext.Provider>
+    <CreateTripContext.Provider value={{ tripData, setTripData }}>
+      <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        
+      </Stack>
+    </CreateTripContext.Provider>
   );
-} 
+}
